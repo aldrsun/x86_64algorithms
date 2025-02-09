@@ -38,48 +38,8 @@ _start:
 
 	mov rax, input
 	call .handleCommands
-	 
-	pop rax
 jmp .inputLoop
 
-
-	mov rdi, rax
-	mov rax, 60
-	syscall	
-	
-	jmp .exitSuccess
-
-	mov rdi, input
-	call .atoi
-	; returned integer in rax
-
-	
-	call .itoa
-	; returned length in rax
-	
-	mov rdx, rax	;length
-	mov rax, 1
-	mov rdi, 1
-	mov rsi, buffer
-	syscall
-	
-
-	;dev test
-	mov rax, 3
-	imul rax, 23
-	imul rax, 7
-	;dev test
-	mov rdi, rax
-	mov rax, 60
-	syscall
-
-	mov rax, 1
-	mov rdi, 1
-	mov rsi, input
-	mov rdx, 7
-	syscall
-
-	jmp .exitSuccess
 .exitSuccess:
 	mov rax, 60
 	mov rdi, 0
