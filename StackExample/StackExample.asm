@@ -3,16 +3,14 @@ global _start
 section .data
 	initial_message db "-- Usage --", 10, "Available Commands:", 10, "push <number>", 10, "pop", 10, "sum", 10, "<Ctrl + C> to exit", 10, 0
 	initial_message_length equ $ - initial_message
-	
 	cursor db "> ", 0
-	
 	counter dq 0
+
 section .bss
-	input resb 9	;reserve 256 bytes
+	input resb 32	;reserve 256 bytes
 	buffer resb 256
 	temp_buffer resb 32 ; for local uses
-; 12345678901234567890
-; push 255\n
+
 section .text
 
 _start:
@@ -35,7 +33,7 @@ _start:
 	mov rax, 0
 	mov rdi, 0
 	lea rsi, input
-	mov rdx, 9
+	mov rdx, 32
 	syscall
 
 	mov rax, input
@@ -76,7 +74,8 @@ jmp .inputLoop
 
 		add rsi, 5
 		mov rdi, rsi
-		call .atoi
+		call .atoiMax255
+		
 
 		mov rbx, [counter]	
 		mov BYTE [buffer + rbx], al
@@ -95,9 +94,16 @@ jmp .inputLoop
 		cmp BYTE [rsi + 2], 'p'
 		jnz .checkSum
 
+		;check if [counter] == 0
+		cmp BYTE [counter], 0
+		je .checkPopCounterCheckNotOK
 		mov rbx, [counter]
 		dec rbx
 		movzx rax, BYTE [buffer + rbx]
+		jmp .checkPopCounterCheckOKEnd
+		.checkPopCounterCheckNotOK:
+		mov rax, 0
+		.checkPopCounterCheckOKEnd:
 		mov rsi, temp_buffer
 		call .itoa
 		mov [counter], rbx
@@ -149,20 +155,26 @@ jmp .inputLoop
 	.handleCommandsEnd:
 	ret
 
-.atoi:
+.atoiMax255:
 	mov rdx, rdi 	; char buffer
 	
 	mov rax, 0 	; will store return value
 	mov rdi, 0	; loop index
-	.atoiLoop:
+	.atoiMax255Loop:
 		movzx rcx, BYTE [rdx + rdi]
 		sub rcx, '0'
-		js .atoiReturn
+		js .atoiMax255Return
 		imul rax, 10
 		add rax, rcx
+		;check if it exceeds 255
+		cmp rax, 255
+		jle .atoiMax255CheckOK
+		mov rax, 0
+		ret
+		.atoiMax255CheckOK:
 		inc rdi
-		jmp .atoiLoop
-	.atoiReturn:
+		jmp .atoiMax255Loop
+	.atoiMax255Return:
 		ret
 
 .itoa:
