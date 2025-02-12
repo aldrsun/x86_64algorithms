@@ -1,6 +1,5 @@
 global _start
 
-
 section .data
 	initial_message db "-- Usage --", 10, "Available Commands:", 10, "push <number>", 10, "pop", 10, "sum", 10, "<Ctrl + C> to exit", 10, 0
 	initial_message_length equ $ - initial_message
@@ -9,10 +8,11 @@ section .data
 	
 	counter dq 0
 section .bss
-	input resb 256	;reserve 256 bytes
-	buffer resb 256 ;reserve 256 bytes
+	input resb 9	;reserve 256 bytes
+	buffer resb 256
 	temp_buffer resb 32 ; for local uses
-
+; 12345678901234567890
+; push 255\n
 section .text
 
 _start:
@@ -21,6 +21,8 @@ _start:
 	lea rsi, initial_message
 	mov rdx, initial_message_length
 	syscall
+
+	mov BYTE [input + 8], 0
 
 .inputLoop:
 
@@ -33,13 +35,20 @@ _start:
 	mov rax, 0
 	mov rdi, 0
 	lea rsi, input
-	mov rdx, 256
+	mov rdx, 9
 	syscall
 
 	mov rax, input
 	call .handleCommands
+	 
+	pop rax
 jmp .inputLoop
 
+	mov rdi, 0
+	mov rax, 60
+	syscall	
+
+	jmp .exitSuccess
 .exitSuccess:
 	mov rax, 60
 	mov rdi, 0
@@ -51,96 +60,91 @@ jmp .inputLoop
 	call .getLength
 	pop rsi
 
-	;check push <number>
-	cmp rax, 5
-	jl .checkPop	
-	cmp BYTE [rsi], 'p'
-	jnz .checkPop
-	cmp BYTE [rsi + 1], 'u'
-	jnz .checkPop
-	cmp BYTE [rsi + 2], 's'
-	jnz .checkPop
-	cmp BYTE [rsi + 3], 'h'
-	jnz .checkPop
-	cmp BYTE [rsi + 4], ' '
-	jnz .checkPop
-		
-	add rsi, 5
-	mov rdi, rsi
-	call .atoi
-	
-	mov rbx, [counter]	
-	mov BYTE [buffer + rbx], al
-	inc rbx
-	mov [counter], rbx	
+	.checkPush:
+		cmp rax, 5
+		jl .checkPop	
+		cmp BYTE [rsi], 'p'
+		jnz .checkPop
+		cmp BYTE [rsi + 1], 'u'
+		jnz .checkPop
+		cmp BYTE [rsi + 2], 's'
+		jnz .checkPop
+		cmp BYTE [rsi + 3], 'h'
+		jnz .checkPop
+		cmp BYTE [rsi + 4], ' '
+		jnz .checkPop
 
-	ret
-	
-	mov rax, 60
-	mov rdi, 13
-	syscall
-	
+		add rsi, 5
+		mov rdi, rsi
+		call .atoi
+
+		mov rbx, [counter]	
+		mov BYTE [buffer + rbx], al
+		inc rbx
+		mov [counter], rbx	
+
+		ret
+
 	.checkPop:
-	cmp rax, 3
-	jnz .checkSum
-	cmp BYTE [rsi], 'p'
-	jnz .checkSum
-	cmp BYTE [rsi + 1], 'o'
-	jnz .checkSum
-	cmp BYTE [rsi + 2], 'p'
-	jnz .checkSum
-	
-	mov rbx, [counter]
-	dec rbx
-	movzx rax, BYTE [buffer + rbx]
-	mov rsi, temp_buffer
-	call .itoa
-	mov [counter], rbx
-	
-	mov BYTE [temp_buffer + rax], 10
-	add rax, 1
+		cmp rax, 3
+		jnz .checkSum
+		cmp BYTE [rsi], 'p'
+		jnz .checkSum
+		cmp BYTE [rsi + 1], 'o'
+		jnz .checkSum
+		cmp BYTE [rsi + 2], 'p'
+		jnz .checkSum
 
-	mov rdx, rax
-	mov rax, 1
-	mov rdi, 1
-	mov rsi, temp_buffer
-	syscall
-	ret
-	
-	.checkSum:
-	cmp rax, 3
-	jnz .handleCommandsEnd
-	cmp BYTE [rsi], 's'
-	jnz .handleCommandsEnd
-	cmp BYTE [rsi + 1], 'u'
-	jnz .handleCommandsEnd
-	cmp BYTE [rsi + 2], 'm'
-	jnz .handleCommandsEnd
-	
-	
-	mov rax, 0 ; sum value
-	mov rbx, [counter]
-	.sumLoop:
-		cmp rbx, 0
-		jl .sumLoopEnd
+		mov rbx, [counter]
 		dec rbx
-		movzx rcx, BYTE [buffer + rbx]
-		add rax, rcx
-		jmp .sumLoop
-	.sumLoopEnd:
+		movzx rax, BYTE [buffer + rbx]
+		mov rsi, temp_buffer
+		call .itoa
+		mov [counter], rbx
+
+		mov BYTE [temp_buffer + rax], 10
+		add rax, 1
+
+		mov rdx, rax
+		mov rax, 1
+		mov rdi, 1
+		mov rsi, temp_buffer
+		syscall
+		ret
+
+	.checkSum:
+		cmp rax, 3
+		jnz .handleCommandsEnd
+		cmp BYTE [rsi], 's'
+		jnz .handleCommandsEnd
+		cmp BYTE [rsi + 1], 'u'
+		jnz .handleCommandsEnd
+		cmp BYTE [rsi + 2], 'm'
+		jnz .handleCommandsEnd
 	
-	mov rsi, temp_buffer
-	call .itoa
-	
-	mov BYTE [temp_buffer + rax], 10	
-	add rax, 1
-	
-	mov rdx, rax
-	mov rax, 1
-	mov rdi, 1
-	mov rsi, temp_buffer
-	syscall
-	ret
+		mov rax, 0 ; sum value
+		mov rbx, [counter]
+		.sumLoop:
+			cmp rbx, 0
+			jl .sumLoopEnd
+			dec rbx
+			movzx rcx, BYTE [buffer + rbx]
+			add rax, rcx
+			jmp .sumLoop
+		.sumLoopEnd:
+
+		mov rsi, temp_buffer
+		call .itoa
+
+		mov BYTE [temp_buffer + rax], 10	
+		add rax, 1
+
+		mov rdx, rax
+		mov rax, 1
+		mov rdi, 1
+		mov rsi, temp_buffer
+		syscall
+		ret
 
 	.handleCommandsEnd:
 	ret
@@ -164,6 +168,10 @@ jmp .inputLoop
 .itoa:
 	mov rdi, rax	; input integer
 	mov r9, 0	; counter
+	cmp rax, 0
+	jne .itoaCalculateLengthLoop
+	mov r9, 1
+	jmp .itoaCalculateLengthEnd
 	.itoaCalculateLengthLoop:
 		cmp rax, 0
 		jz .itoaCalculateLengthEnd
@@ -175,12 +183,11 @@ jmp .inputLoop
 	.itoaCalculateLengthEnd:
 
 	mov r10, 0
+
 	.itoaLoop:
-		mov rax, rdi
-		cmp rax, 0
-		je .itoaReturn
 		xor rdx, rdx
 		mov rcx, 10
+		mov rax, rdi
 		div rcx
 		mov rdi, rax
 		mov rax, rdx
@@ -190,6 +197,8 @@ jmp .inputLoop
 		sub r11, 1
 		mov [rsi + r11], al
 		inc r10
+		cmp rdi, 0
+		je .itoaReturn
 		jmp .itoaLoop
 	.itoaReturn:
 	mov rax, r9 ; character count
