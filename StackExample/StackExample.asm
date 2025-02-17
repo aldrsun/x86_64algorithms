@@ -20,8 +20,6 @@ _start:
 	mov rdx, initial_message_length
 	syscall
 
-	mov BYTE [input + 8], 0
-
 .inputLoop:
 
 	mov rax, 1
@@ -39,14 +37,8 @@ _start:
 	mov rax, input
 	call .handleCommands
 	 
-	pop rax
 jmp .inputLoop
 
-	mov rdi, 0
-	mov rax, 60
-	syscall	
-
-	jmp .exitSuccess
 .exitSuccess:
 	mov rax, 60
 	mov rdi, 0
@@ -55,9 +47,23 @@ jmp .inputLoop
 .handleCommands:
 	mov rsi, rax
 	push rsi
-	call .getLength
+	call .getLength ; rax is the length count now
 	pop rsi
-
+	
+	.checkExit:
+		cmp rax, 4
+		jnz .checkPush
+		cmp BYTE [rsi], 'e'
+		jnz .checkPush
+		cmp BYTE [rsi + 1], 'x'
+		jnz .checkPush
+		cmp BYTE [rsi + 2], 'i'
+		jnz .checkPush
+		cmp BYTE [rsi + 3], 't'
+		jnz .checkPush
+		
+		jmp .exitSuccess
+		
 	.checkPush:
 		cmp rax, 5
 		jl .checkPop	
