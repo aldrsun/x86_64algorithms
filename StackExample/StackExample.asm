@@ -1,7 +1,7 @@
 global _start
 
 section .data
-	initial_message db "-- Usage --", 10, "Available Commands:", 10, "push <number>", 10, "pop", 10, "sum", 10, "<Ctrl + C> to exit", 10, 0
+	initial_message db "-- Usage --", 10, "Available Commands:", 10, "'push <number>'", 10, "'pop'", 10, "'sum'", 10, "'exit' to exit", 10, 0
 	initial_message_length equ $ - initial_message
 	cursor db "> ", 0
 	counter dq 0
