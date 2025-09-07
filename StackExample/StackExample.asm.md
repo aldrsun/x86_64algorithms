@@ -1,6 +1,6 @@
 # StackExample
 
-A simple example of a custom stack which can hold numbers between 0-255. There may be some errors or poorly written sections, but it will be improved.
+A simulation of stack which can hold numbers between 0-255. There may be some errors or poorly written sections, but it will be improved.
 
 ```terminal
 $ ./StackExample 
